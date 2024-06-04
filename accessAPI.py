@@ -3,8 +3,9 @@ import json
 
 base_url = 'https://openscriptureapi.org/api/scriptures/v1/lds/en/volume/bookofmormon/'
 import requests
+import json
 
-# Define the base URL
+# Define the base URL for the API
 base_url = 'https://openscriptureapi.org/api/scriptures/v1/lds/en/volume/bookofmormon/'
 
 def get_chapter_summary(book, chapter):
@@ -28,6 +29,10 @@ def get_chapter_summary(book, chapter):
         return summary
     except requests.exceptions.RequestException as e:
         return f"Error: Could not retrieve the summary. {e}"
+    except json.JSONDecodeError:
+        return "Error: Unable to decode JSON response."
+    except KeyError:
+        return "Error: Unexpected response format."
 
 def main():
     print("Welcome to the Book of Mormon Summary Tool!")
@@ -35,6 +40,11 @@ def main():
     while True:
         book = input("Which book of the Book of Mormon would you like? ")
         chapter = input(f"Which chapter of {book} are you interested in? ")
+        
+        # Ensure the chapter is a valid number
+        if not chapter.isdigit():
+            print("Please enter a valid chapter number.")
+            continue
         
         summary = get_chapter_summary(book, chapter)
         print(f"Summary of {book} chapter {chapter}:")
