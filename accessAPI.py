@@ -4,57 +4,46 @@ import json
 base_url = 'https://openscriptureapi.org/api/scriptures/v1/lds/en/volume/bookofmormon/'
 import requests
 import json
+from urllib.parse import quote
 
-# Define the base URL for the API
-base_url = 'https://openscriptureapi.org/api/scriptures/v1/lds/en/volume/bookofmormon/'
-
-def get_chapter_summary(book, chapter):
+print("Welcome to the Book of Mormon Summary Tool!")
+while True:
+    book = input("Which book of the Book of Mormon would you like? ")
+    chapter_str = input("Which chapter of %s are you interested in? " % book)
+    
     try:
-        # Replace spaces with dashes for API URL and convert to lowercase
-        book = book.replace(" ", "-").lower()
-        # Construct the API URL
-        url = f"{base_url}{book}/{chapter}"
-        
-        response = requests.get(url)
+        chapter = int(chapter_str)
+    except ValueError:
+        print("Please enter a valid chapter number.")
+        continue
+
+    # Properly encode the book name
+    encoded_book = quote(book)
+    base_url = 'https://openscriptureapi.org/api/scriptures/v1/lds/en/volume/bookofmormon/%s/%s' % (encoded_book, chapter)
+    
+    try:
+        response = requests.get(base_url)
         response.raise_for_status()
-        
-        data = response.json()
-        
-        # Check if 'summary' is in the response data
-        if 'summary' in data:
-            summary = data['summary']
-        else:
-            summary = 'No summary available'
-        
-        return summary
     except requests.exceptions.RequestException as e:
-        return f"Error: Could not retrieve the summary. {e}"
-    except json.JSONDecodeError:
-        return "Error: Unable to decode JSON response."
-    except KeyError:
-        return "Error: Unexpected response format."
-
-def main():
-    print("Welcome to the Book of Mormon Summary Tool!")
-    
-    while True:
-        book = input("Which book of the Book of Mormon would you like? ")
-        chapter = input(f"Which chapter of {book} are you interested in? ")
-        
-        # Ensure the chapter is a valid number
-        if not chapter.isdigit():
-            print("Please enter a valid chapter number.")
-            continue
-        
-        summary = get_chapter_summary(book, chapter)
-        print(f"Summary of {book} chapter {chapter}:")
-        print(summary)
-        
-        another = input("Would you like to view another (Y/N)? ").strip().lower()
-        if another != 'y':
+        print(f"Failed to retrieve data for {book} chapter {chapter}. Error: {e}")
+        another = input("Would you like to try again (Y/N)? ")
+        if another.lower() != 'y':
+            print("Thank you for using the Book of Mormon Summary Tool!")
             break
-    
-    print("Thank you for using the Book of Mormon Summary Tool!")
+        else:
+            continue
 
-if __name__ == "__main__":
-    main()
+    data = response.json()
+    if 'chapter' in data and 'summary' in data['chapter']:
+        print("Summary of %s chapter %s:" % (book, chapter))
+        print(data['chapter']['summary'])
+    else:
+        print("Summary not found for %s chapter %s." % (book, chapter))
+
+    print(" ")
+    another = input("Would you like to view another (Y/N)? ")
+
+    if another.lower() != 'y':
+        print("Thank you for using the Book of Mormon Summary Tool!")
+        break
+
